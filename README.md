@@ -6,6 +6,6 @@ To use this function in your code, first import the functions in the network_vis
 
 In your code, you can simply 
 - **replace** `net_gen.print_network()`  with `draw_network(net_gen, title="Network", store_path = "./")`
-- or **add** `draw_network(net_gen, title="Network", store_path = "./")` following `net_gen.print_network()` 
+<!-- - or **add** `draw_network(net_gen, title="Network", store_path = "./")` following `net_gen.print_network()`  -->
 
 The `store_path` is where you store the network structure, and the `title` is the title you assigned to the stored picture.
