@@ -191,7 +191,7 @@ class draw_network():
         self.setParameters() # set plotting parameters
 
         figure, axes = plt.subplots()
-        plt.rcParams["figure.figsize"] = (6,6)
+#         plt.rcParams["figure.figsize"] = (6,6)
         plt.rcParams['savefig.dpi'] = 400 
         plt.rcParams['figure.dpi'] = 400 
 
