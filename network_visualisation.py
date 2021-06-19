@@ -4,9 +4,14 @@ It can be a alternative option to net_gen.print_network() -> draw_network(net_ge
 '''
 
 '''
+ver: 1.1
+solve synapse parse problem
+'''
+
+'''
 Author: Wenjie He
 Date:   June 2021
-Ver:    1.0
+Ver:    1.1
 '''
 
 
@@ -25,6 +30,103 @@ import io
 from contextlib import redirect_stdout
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+
+def gen_param_group_1core():
+    paramGroup = dyn1.Dynapse1ParameterGroup()
+    # THR, gain factor of neurons
+    paramGroup.param_map["IF_THR_N"].coarse_value = 5
+    paramGroup.param_map["IF_THR_N"].fine_value = 80
+
+    # refactory period of neurons
+    paramGroup.param_map["IF_RFR_N"].coarse_value = 4
+    paramGroup.param_map["IF_RFR_N"].fine_value = 128
+
+    # leakage of neurons
+    paramGroup.param_map["IF_TAU1_N"].coarse_value = 4
+    paramGroup.param_map["IF_TAU1_N"].fine_value = 80
+
+    # turn off tau2
+    paramGroup.param_map["IF_TAU2_N"].coarse_value = 7
+    paramGroup.param_map["IF_TAU2_N"].fine_value = 255
+
+    # turn off DC
+    paramGroup.param_map["IF_DC_P"].coarse_value = 0
+    paramGroup.param_map["IF_DC_P"].fine_value = 0
+
+    # leakage of AMPA
+    paramGroup.param_map["NPDPIE_TAU_F_P"].coarse_value = 4
+    paramGroup.param_map["NPDPIE_TAU_F_P"].fine_value = 80
+
+    # gain of AMPA
+    paramGroup.param_map["NPDPIE_THR_F_P"].coarse_value = 4
+    paramGroup.param_map["NPDPIE_THR_F_P"].fine_value = 80
+
+    # weight of AMPA
+    paramGroup.param_map["PS_WEIGHT_EXC_F_N"].coarse_value = 0
+    paramGroup.param_map["PS_WEIGHT_EXC_F_N"].fine_value = 0
+
+    # leakage of NMDA
+    paramGroup.param_map["NPDPIE_TAU_S_P"].coarse_value = 4
+    paramGroup.param_map["NPDPIE_TAU_S_P"].fine_value = 80
+
+    # gain of NMDA
+    paramGroup.param_map["NPDPIE_THR_S_P"].coarse_value = 4
+    paramGroup.param_map["NPDPIE_THR_S_P"].fine_value = 80
+
+    # weight of NMDA
+    paramGroup.param_map["PS_WEIGHT_EXC_S_N"].coarse_value = 0
+    paramGroup.param_map["PS_WEIGHT_EXC_S_N"].fine_value = 0
+
+    # leakage of GABA_A (shunting)
+    paramGroup.param_map["NPDPII_TAU_F_P"].coarse_value = 4
+    paramGroup.param_map["NPDPII_TAU_F_P"].fine_value = 80
+
+    # gain of GABA_A (shunting)
+    paramGroup.param_map["NPDPII_THR_F_P"].coarse_value = 4
+    paramGroup.param_map["NPDPII_THR_F_P"].fine_value = 80
+
+    # weight of GABA_A (shunting)
+    paramGroup.param_map["PS_WEIGHT_INH_F_N"].coarse_value = 0
+    paramGroup.param_map["PS_WEIGHT_INH_F_N"].fine_value = 0
+
+    # leakage of GABA_B
+    paramGroup.param_map["NPDPII_TAU_S_P"].coarse_value = 4
+    paramGroup.param_map["NPDPII_TAU_S_P"].fine_value = 80
+
+    # gain of GABA_B
+    paramGroup.param_map["NPDPII_THR_S_P"].coarse_value = 4
+    paramGroup.param_map["NPDPII_THR_S_P"].fine_value = 80
+
+    # weight of GABA_B
+    paramGroup.param_map["PS_WEIGHT_INH_S_N"].coarse_value = 0
+    paramGroup.param_map["PS_WEIGHT_INH_S_N"].fine_value = 0
+
+    # other advanced parameters
+    paramGroup.param_map["IF_NMDA_N"].coarse_value = 0
+    paramGroup.param_map["IF_NMDA_N"].fine_value = 0
+
+    paramGroup.param_map["IF_AHTAU_N"].coarse_value = 4
+    paramGroup.param_map["IF_AHTAU_N"].fine_value = 80
+
+    paramGroup.param_map["IF_AHTHR_N"].coarse_value = 0
+    paramGroup.param_map["IF_AHTHR_N"].fine_value = 0
+
+    paramGroup.param_map["IF_AHW_P"].coarse_value = 0
+    paramGroup.param_map["IF_AHW_P"].fine_value = 0
+
+    paramGroup.param_map["IF_CASC_N"].coarse_value = 0
+    paramGroup.param_map["IF_CASC_N"].fine_value = 0
+
+    paramGroup.param_map["PULSE_PWLK_P"].coarse_value = 4
+    paramGroup.param_map["PULSE_PWLK_P"].fine_value = 106
+
+    paramGroup.param_map["R2R_P"].coarse_value = 3
+    paramGroup.param_map["R2R_P"].fine_value = 85
+
+    paramGroup.param_map["IF_BUF_P"].coarse_value = 3
+    paramGroup.param_map["IF_BUF_P"].fine_value = 80
+
+    return paramGroup
 
 class draw_network():
     """ draw the network with the output of net_gen.print_network()
@@ -47,7 +149,15 @@ class draw_network():
                 NN.append(line)
 
         network_DF = self.generateDF(NN)
+        self.imageTitle = title + "\nAMPA_red NMDA_orange GABA_A_blue GABA_B_green"
+        self.imageSave = title
+        self.showSpikeGen = False # display the connection between spikegen and neurons
+        self.showAMPA = True
+        self.showNMDA = True
+        self.showGABA_A = True
+        self.showGABA_B = True
         self.draw(network_DF, title=title, store_path = store_path)
+        print(network_DF)
 
     def generateDF(self, NN):
         """ transform collected print_out into dataframe
@@ -63,7 +173,8 @@ class draw_network():
             
             for j in range(len(Sources_raw)-1):
                 Source = re.search("\((.*),", Sources_raw[j]).group(1)[1:-1]
-                Synapse = re.search(", (.*)", Sources_raw[j]).group(1)[1:-1]
+                Synapse = re.search(", (\'.*)", Sources_raw[j]).group(1)[1:-1]
+                
                 if Source not in Sources: # a new connection
                     Sources.append(Source)
                     count = 1
@@ -77,11 +188,6 @@ class draw_network():
         
         network_DF = network_DF.sort_values(by=["Source", "Target", "Synapse", "Number"])
         
-        self.imageTitle = title + "\nAMPA_red NMDA_orange GABA_A_blue GABA_B_green"
-        self.imageSave = title
-        
-        self.showSpikeGen = True # display the connection between spikegen and neurons
-
         self.setParameters() # set plotting parameters
 
         figure, axes = plt.subplots()
@@ -300,6 +406,7 @@ class draw_network():
 
             # draw arrow
             synapse = network_DF.loc[i].Synapse
+            # print(synapse, self.showAMPA, self.showNMDA, self.showGABA_A, self.showGABA_B)
             if synapse == "AMPA":
                 color_arrow = self.color_AMPA
                 ls_arrow = self.ls_AMPA
@@ -312,19 +419,31 @@ class draw_network():
             if synapse == "GABA_B":
                 color_arrow = self.color_GABA_B
                 ls_arrow = self.ls_GABA_B
-            if is_spikegen and self.showSpikeGen==False: #if self.showSpikeGen==False, skip drawing current arrow
+
+            if (is_spikegen and self.showSpikeGen==False) or (synapse == "AMPA" and self.showAMPA == False) or (synapse == "NMDA" and self.showNMDA == False) or (synapse == "GABA_A" and self.showGABA_A == False) or (synapse == "GABA_B" and self.showGABA_B == False): #if self.showSpikeGen==False, skip drawing current arrow
                 continue
+            else:
+                axes.arrow(x_start, y_start, dx, dy, color=color_arrow, ls=ls_arrow, alpha=self.alpha, head_width=self.head_width, head_length=self.head_length) # label=synapse
+                # display the number of connection above the arrow
+                num_connection = network_DF.loc[i].Number
+                x_text, y_text = (x_start+x_end)/2, (y_start+y_end)/2
+                plt.text(x_text, y_text, num_connection, horizontalalignment='center', color=color_arrow, fontsize=self.fontsize)
+            # if synapse == "AMPA" and self.showAMPA == False:
+                # continue
+            # if synapse == "NMDA" and self.showNMDA == False:
+                # continue
+            # if synapse == "GABA_A" and self.showGABA_A == False:
+                # continue
+            # if synapse == "GABA_B" and self.showGABA_B == False:
+                # continue
             
-            axes.arrow(x_start, y_start, dx, dy, color=color_arrow, ls=ls_arrow, alpha=self.alpha, head_width=self.head_width, head_length=self.head_length) # label=synapse
             
-            # display the number of connection above the arrow
-            num_connection = network_DF.loc[i].Number
-            x_text, y_text = (x_start+x_end)/2, (y_start+y_end)/2
-            plt.text(x_text, y_text, num_connection, horizontalalignment='center', color=color_arrow, fontsize=self.fontsize)
+            
+            
     
     def saveImage(self, hardware_layout, figure, axes, store_path, showImage=True):
         if self.showSpikeGen==False:
-            self.imageTitle+="(spikeGen hidden)"
+            self.imageTitle+="\n(spikeGen hidden)"
         plt.title(self.imageTitle)
         ymax = (self.maxNeuron-1)*self.distance + 10*self.radius
         xmax = self.distance*(np.sum(hardware_layout.num_col_draw)+1)
@@ -334,119 +453,11 @@ class draw_network():
         axes.set_aspect(1)
         if showImage:
             plt.show()
-        figure.savefig(store_path+self.imageSave)
-        print(f"done \nfigure saved to {store_path}{self.imageSave}.png")
+        figure.savefig(store_path+self.imageSave+".pdf")
+        print(f"done \nfigure saved to {store_path}{self.imageSave}.pdf")
         
-def gen_param_group_1core():
-    paramGroup = dyn1.Dynapse1ParameterGroup()
-    # THR, gain factor of neurons
-    paramGroup.param_map["IF_THR_N"].coarse_value = 5
-    paramGroup.param_map["IF_THR_N"].fine_value = 80
-
-    # refactory period of neurons
-    paramGroup.param_map["IF_RFR_N"].coarse_value = 4
-    paramGroup.param_map["IF_RFR_N"].fine_value = 128
-
-    # leakage of neurons
-    paramGroup.param_map["IF_TAU1_N"].coarse_value = 4
-    paramGroup.param_map["IF_TAU1_N"].fine_value = 80
-
-    # turn off tau2
-    paramGroup.param_map["IF_TAU2_N"].coarse_value = 7
-    paramGroup.param_map["IF_TAU2_N"].fine_value = 255
-
-    # turn off DC
-    paramGroup.param_map["IF_DC_P"].coarse_value = 0
-    paramGroup.param_map["IF_DC_P"].fine_value = 0
-
-    # leakage of AMPA
-    paramGroup.param_map["NPDPIE_TAU_F_P"].coarse_value = 4
-    paramGroup.param_map["NPDPIE_TAU_F_P"].fine_value = 80
-
-    # gain of AMPA
-    paramGroup.param_map["NPDPIE_THR_F_P"].coarse_value = 4
-    paramGroup.param_map["NPDPIE_THR_F_P"].fine_value = 80
-
-    # weight of AMPA
-    paramGroup.param_map["PS_WEIGHT_EXC_F_N"].coarse_value = 0
-    paramGroup.param_map["PS_WEIGHT_EXC_F_N"].fine_value = 0
-
-    # leakage of NMDA
-    paramGroup.param_map["NPDPIE_TAU_S_P"].coarse_value = 4
-    paramGroup.param_map["NPDPIE_TAU_S_P"].fine_value = 80
-
-    # gain of NMDA
-    paramGroup.param_map["NPDPIE_THR_S_P"].coarse_value = 4
-    paramGroup.param_map["NPDPIE_THR_S_P"].fine_value = 80
-
-    # weight of NMDA
-    paramGroup.param_map["PS_WEIGHT_EXC_S_N"].coarse_value = 0
-    paramGroup.param_map["PS_WEIGHT_EXC_S_N"].fine_value = 0
-
-    # leakage of GABA_A (shunting)
-    paramGroup.param_map["NPDPII_TAU_F_P"].coarse_value = 4
-    paramGroup.param_map["NPDPII_TAU_F_P"].fine_value = 80
-
-    # gain of GABA_A (shunting)
-    paramGroup.param_map["NPDPII_THR_F_P"].coarse_value = 4
-    paramGroup.param_map["NPDPII_THR_F_P"].fine_value = 80
-
-    # weight of GABA_A (shunting)
-    paramGroup.param_map["PS_WEIGHT_INH_F_N"].coarse_value = 0
-    paramGroup.param_map["PS_WEIGHT_INH_F_N"].fine_value = 0
-
-    # leakage of GABA_B
-    paramGroup.param_map["NPDPII_TAU_S_P"].coarse_value = 4
-    paramGroup.param_map["NPDPII_TAU_S_P"].fine_value = 80
-
-    # gain of GABA_B
-    paramGroup.param_map["NPDPII_THR_S_P"].coarse_value = 4
-    paramGroup.param_map["NPDPII_THR_S_P"].fine_value = 80
-
-    # weight of GABA_B
-    paramGroup.param_map["PS_WEIGHT_INH_S_N"].coarse_value = 0
-    paramGroup.param_map["PS_WEIGHT_INH_S_N"].fine_value = 0
-
-    # other advanced parameters
-    paramGroup.param_map["IF_NMDA_N"].coarse_value = 0
-    paramGroup.param_map["IF_NMDA_N"].fine_value = 0
-
-    paramGroup.param_map["IF_AHTAU_N"].coarse_value = 4
-    paramGroup.param_map["IF_AHTAU_N"].fine_value = 80
-
-    paramGroup.param_map["IF_AHTHR_N"].coarse_value = 0
-    paramGroup.param_map["IF_AHTHR_N"].fine_value = 0
-
-    paramGroup.param_map["IF_AHW_P"].coarse_value = 0
-    paramGroup.param_map["IF_AHW_P"].fine_value = 0
-
-    paramGroup.param_map["IF_CASC_N"].coarse_value = 0
-    paramGroup.param_map["IF_CASC_N"].fine_value = 0
-
-    paramGroup.param_map["PULSE_PWLK_P"].coarse_value = 4
-    paramGroup.param_map["PULSE_PWLK_P"].fine_value = 106
-
-    paramGroup.param_map["R2R_P"].coarse_value = 3
-    paramGroup.param_map["R2R_P"].fine_value = 85
-
-    paramGroup.param_map["IF_BUF_P"].coarse_value = 3
-    paramGroup.param_map["IF_BUF_P"].fine_value = 80
-
-    return paramGroup
-
 
 if __name__ == '__main__':
-
-    # open DYNAP-SE1 board to get Dynapse1Model
-    device_name = "my_dynapse1"
-    store = ut.open_dynapse1(device_name, gui=False, sender_port=12305, receiver_port=12306)
-    model = getattr(store, device_name)
-
-    # set initial (proper) parameters
-    paramGroup = gen_param_group_1core()
-    for chip in range(4):
-        for core in range(4):
-            model.update_parameter_group(paramGroup, chip, core)
 
     # build a Simple network for test
     net_gen = n.NetworkGenerator()
@@ -460,6 +471,3 @@ if __name__ == '__main__':
 
     # draw the network
     draw_network(net_gen, title="Network", store_path = "./")
-
-    # close Dynapse1
-    ut.close_dynapse1(store, device_name)
